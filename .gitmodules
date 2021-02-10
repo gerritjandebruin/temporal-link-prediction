@@ -1,0 +1,3 @@
+[submodule "teexgraph"]
+	path = teexgraph
+	url = git@github.com:franktakes/teexgraph.git
