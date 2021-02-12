@@ -1,8 +1,8 @@
 import os
+import requests
 import tarfile
 import tempfile
 import typing
-import urllib.request
 
 import joblib
 import networkx as nx
@@ -20,7 +20,36 @@ SAMPLE_SIZE = 10000
 # Split the edgelist at this quantile into the mature and probe edgelist.
 SPLIT_FRACTION = 2/3
 
-def _download_and_extract(url: str, path: str) -> None:
+def download_from_url(url: str, dst: str, verbose: bool = False):
+    """
+    @param: url to download file
+    @param: dst place to put the file
+    @param: if verbose, show tqdm
+    
+    Source: https://gist.github.com/wy193777/0e2a4932e81afc6aa4c8f7a2984f34e2
+    """
+    file_size = int(requests.head(url).headers["Content-Length"])
+    if os.path.exists(dst):
+        first_byte = os.path.getsize(dst)
+    else:
+        first_byte = 0
+    if first_byte >= file_size:
+        return file_size
+    header = {"Range": "bytes=%s-%s" % (first_byte, file_size)}
+    pbar = tqdm(
+        total=file_size, initial=first_byte,
+        unit='B', unit_scale=True, desc=url.split('/')[-1],
+        disable=not verbose)
+    req = requests.get(url, headers=header, stream=True)
+    with(open(dst, 'ab')) as f:
+        for chunk in req.iter_content(chunk_size=1024):
+            if chunk:
+                f.write(chunk)
+                pbar.update(1024)
+    pbar.close()
+    return file_size
+
+def _download_and_extract(url: str, path: str, verbose: bool = False) -> None:
   """Download and extract the KONECT dataset. Store temporary files in path.
   
   Args:
@@ -30,7 +59,7 @@ def _download_and_extract(url: str, path: str) -> None:
   """
   os.makedirs(path, exist_ok=True)
   with tempfile.NamedTemporaryFile() as file:
-    urllib.request.urlretrieve(url, file.name)
+    download_from_url(url, file.name, verbose=verbose)
     with tarfile.open(file.name) as tar:
       dir_names = [member.name for member in tar.getmembers() if member.isdir()]
       assert len(dir_names) == 1
@@ -42,8 +71,8 @@ def _download_and_extract(url: str, path: str) -> None:
       os.replace(entry.path, os.path.join(path, entry.name.split('.')[0]))
   os.rmdir(os.path.join(path, dir_name))
   
-def get_edgelist(url: str, path: str, 
-                 make_undirected: bool = False) -> pd.DataFrame:
+def get_edgelist(
+  url: str, path: str, verbose: bool = False) -> pd.DataFrame:
   """Download and extract the KONECT dataset. Store temporary files in path. If
   the temporary files are already present in path, the file is not again
   downloaded or extracted.
@@ -52,12 +81,13 @@ def get_edgelist(url: str, path: str,
     url: The url pointing to KONECT download file. Usual format: 
       'http://konect.cc/files/download.*.tar.bz2'.
     path: Optional; Store the extracted dataset in this directory.
+    verbose: Optional; Show tqdm when downloading.
     
   Returns:
     edgelist: A pd.DataFrame containing the columns source, target and datetime.
   """
   if not os.path.isfile(os.path.join(path, 'out')):
-    _download_and_extract(url, path) 
+    _download_and_extract(url, path, verbose=verbose) 
   
   edgelist = pd.read_csv(os.path.join(path, 'out'), delim_whitespace=True,
                          engine='python', comment='%', 
@@ -66,8 +96,8 @@ def get_edgelist(url: str, path: str,
   
   if -1 in edgelist['weight'].unique():
     print("""\
-          This is likely a signed network (weight equals -1). 
-          Only positive weights will be used.
+This is likely a signed network (weight equals -1). 
+Only positive weights will be used.
           """)
     edgelist = edgelist[edgelist['weight'] > 0]
   
