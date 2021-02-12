@@ -39,7 +39,6 @@ def plot_datetime(
   if t_min is None: t_min = t_min_
   if t_split is None: t_split = t_split_
   if t_max is None: t_max = t_max_
-
   with plt.rc_context({'xtick.top': True, 'ytick.right': True, 
                        'figure.figsize': (20, 4)}):
     plt.fill_between([t_min, t_split], 0, 1, color='C1', alpha=.5, 

@@ -42,7 +42,8 @@ def _download_and_extract(url: str, path: str) -> None:
       os.replace(entry.path, os.path.join(path, entry.name.split('.')[0]))
   os.rmdir(os.path.join(path, dir_name))
   
-def get_edgelist(url: str, path: str) -> pd.DataFrame:
+def get_edgelist(url: str, path: str, 
+                 make_undirected: bool = False) -> pd.DataFrame:
   """Download and extract the KONECT dataset. Store temporary files in path. If
   the temporary files are already present in path, the file is not again
   downloaded or extracted.
@@ -58,10 +59,17 @@ def get_edgelist(url: str, path: str) -> pd.DataFrame:
   if not os.path.isfile(os.path.join(path, 'out')):
     _download_and_extract(url, path) 
   
-  edgelist = pd.read_csv(os.path.join(path, 'out'), sep=r'[ \t]', 
+  edgelist = pd.read_csv(os.path.join(path, 'out'), delim_whitespace=True,
                          engine='python', comment='%', 
                          names=['source', 'target', 'weight', 'datetime'])
   edgelist = edgelist[edgelist['datetime'] != 0]
+  
+  if -1 in edgelist['weight'].unique():
+    print("""\
+          This is likely a signed network (weight equals -1). 
+          Only positive weights will be used.
+          """)
+    edgelist = edgelist[edgelist['weight'] > 0]
   
   # Check of both u->v and v->u are present for every edge.
   edgeset = {
@@ -72,7 +80,8 @@ def get_edgelist(url: str, path: str) -> pd.DataFrame:
   
   edgelist['datetime'] = pd.to_datetime(edgelist['datetime'], unit='s')
 
-  assert (edgelist['weight'] == 1).all()
+  if not (edgelist['weight'] == 1).all():
+    print('This is a weighted network. However, weights will be discarded.')
   return edgelist.drop(columns=['weight'])     
     
 def split_in_intervals(
