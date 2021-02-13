@@ -41,6 +41,9 @@ def plot_datetime(
   if t_max is None: t_max = t_max_
   with plt.rc_context({'xtick.top': True, 'ytick.right': True, 
                        'figure.figsize': (20, 4)}):
+    datetimes.value_counts(normalize=True).sort_index().cumsum().plot(
+      xlabel='Year', ylabel='CDF', xlim=(datetimes.min(), datetimes.max()),
+      ylim=(0,1), grid=True, legend=False, label='cumulative distribution')
     plt.fill_between([t_min, t_split], 0, 1, color='C1', alpha=.5, 
                      label='maturing interval')
     plt.fill_between([t_split, t_max], 0, 1, color='C2', alpha=.5, 
