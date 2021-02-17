@@ -20,6 +20,7 @@ from tqdm.auto import tqdm
 from .pipeline import SPLIT_FRACTION
 from .features import TIME_STRATEGIES, Strategy, Experiment
 
+
 def plot_datetime(
   datetimes: pd.Series, *, 
   t_min: typing.Optional[pd.Timestamp] = None,
@@ -50,7 +51,7 @@ def plot_datetime(
                      label='maturing interval')
     plt.fill_between([t_split, t_max], 0, 1, color='C2', alpha=.5, 
                      label='probing interval')
-    plt.legend()
+    plt.legend() 
     
 def class_imbalance(targets: np.ndarray) -> pd.DataFrame:
   """Report the class imbalance in the targets."""

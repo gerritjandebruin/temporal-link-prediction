@@ -3,7 +3,7 @@
 
 # Project settings
 *settings.json
-
+.vscode
 
 # Python specific:
 # Byte-compiled / optimized / DLL files
