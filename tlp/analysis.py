@@ -17,7 +17,7 @@ import sklearn.metrics
 import seaborn as sns
 from tqdm.auto import tqdm
 
-from .pipeline import SPLIT_FRACTION
+from .pipeline.dataPreparation import SPLIT_FRACTION
 from .features import TIME_STRATEGIES, Strategy, Experiment
 
 
@@ -58,109 +58,6 @@ def class_imbalance(targets: np.ndarray) -> pd.DataFrame:
   return pd.DataFrame({
     'absolute': pd.Series(targets).value_counts(),
     'relative': pd.Series(targets).value_counts(normalize=True)})
- 
-def _teexmaster(g: nx.Graph, fraction=.01):
-  """Usage: average_path_length, diameter = teexmaster(graph)"""
-  with tempfile.NamedTemporaryFile() as tmp:
-    nx.write_edgelist(nx.convert_node_labels_to_integers(g), tmp.name, 
-                      delimiter='\t', data=False)
-    cp = subprocess.run(
-      ['./teexgraph/teexgraph'], 
-      input=f'load_undirected {tmp.name}\nest_dist_distri {fraction}', 
-      encoding='ascii', stdout=subprocess.PIPE)
-  path_distribution = np.array([int(item)
-                                for line in cp.stdout.split('\n')
-                                for item in line.split('\t') if item != ''
-                               ]).reshape(-1,2)
-  return path_distribution
-  
-def _diameter(g: nx.Graph):
-  """Usage: average_path_length, diameter = teexmaster(graph)"""
-  with tempfile.NamedTemporaryFile() as tmp:
-    nx.write_edgelist(nx.convert_node_labels_to_integers(g), tmp.name, 
-                      delimiter='\t', data=False)
-    cp = subprocess.run(
-      ['./teexgraph/teexgraph'], 
-      input=f'load_undirected {tmp.name}\ndiameter', 
-      encoding='ascii', stdout=subprocess.PIPE)
-  return int(cp.stdout.split()[0])
-
-def _gc(g: nx.Graph) -> nx.Graph:
-  """Return giant component."""
-  return g.subgraph(max(nx.connected_components(g), key=len)).copy()
-  
-def _weighted_mean(array: np.ndarray) -> float: 
-  return np.average(np.array(range(len(array))), weights=array)
-    
-class NetworkStats(typing.NamedTuple):
-  path_distribution: pd.Series
-  stats: pd.Series
-    
-def network_stats(edgelist_dict: dict[str, pd.DataFrame], *,
-                  fraction: float = 1, 
-                  path: typing.Optional[str] = None,
-                  verbose: bool = False
-                  ) -> dict[str, NetworkStats]:
-  """Report some statistics for the given graphs. 
-  
-  Args:
-    edgelist_dict: Dictionary keyed by label and with edgelist as value.
-    fraction: Optional; Use only this fraction of nodes to determine the path
-      distribution and hence metrics like diameter and average_path_length.
-    path: Store intermediate results in this directory. Will create directory if
-      it does not exists.
-    verbose: Optional; If true show tqdm progressbar.
-      
-  Returns:
-    NetworkStats: Dict-in-dict, with the outer dict keyed by label of the graph
-      and inner dict containing keys path_distribution and statistics.  
-  
-  Usage:
-    path_distribution, stats = tlp.analysis.network_stats(edgelist)
-  """
-  if path is not None: os.makedirs(path)
-  results = dict()
-  iterator = tqdm(edgelist_dict.items(), disable=not verbose, unit='graph')
-  for name, edgelist in iterator:
-    iterator.set_description(name)
-    multigraph = nx.from_pandas_edgelist(edgelist, create_using=nx.MultiGraph)
-    simplegraph = nx.from_pandas_edgelist(edgelist)
-    simplegraph_gc = _gc(simplegraph)
-    multigraph_gc = _gc(multigraph)
-    path_distribution = _teexmaster(simplegraph, fraction=fraction)[:,1]
-    average_path_length = _weighted_mean(path_distribution)
-    diameter = len(path_distribution)
-    n_e = multigraph.number_of_edges()
-    s_n = simplegraph.number_of_edges()
-    result = NetworkStats(
-      path_distribution=pd.Series(path_distribution, name=name),
-      stats = pd.Series(
-        {'nodes': simplegraph.number_of_nodes(), 
-         'nodes (GC)': multigraph_gc.number_of_nodes(), 
-         'edges': n_e,
-         'edges (GC)': multigraph_gc.number_of_edges(), 
-         'pairs of nodes connected': s_n,
-         'pairs of nodes connected (GC)': simplegraph_gc.number_of_edges(),
-         'average number of edges between connected node pairs': n_e/s_n,
-         'density (multigraph)': nx.density(multigraph),
-         'density (multigraph, GC)': nx.density(multigraph_gc),
-         'density (simplegraph)': nx.density(simplegraph),
-         'density (simplegraph, GC)': nx.density(simplegraph_gc),
-         'assortativity (multigraph)': (
-           nx.degree_assortativity_coefficient(multigraph)),
-         'assortativity (simplegraph)': (
-           nx.degree_assortativity_coefficient(simplegraph)),
-         'diameter': diameter, 
-         'average path length': average_path_length,
-         'average clustering coefficient (simplegraph)': (
-           nx.average_clustering(simplegraph)),
-         'average clustering coefficient (multigraph)': (
-           nx.average_clustering(multigraph))},
-        name=name))
-    if path is not None:
-      joblib.dump(result, os.path.join(path, name + '.pkl'))
-    results[name] = result
-  return results
   
 def plot_path_distributions(df: pd.DataFrame, smooth: bool = True) -> None:
   """Plot the path distributions in one plot.
@@ -330,58 +227,3 @@ def get_auc(feature_dict: dict[Experiment, pd.Series], targets: np.ndarray
     index=pd.Index(feature_dict, name=Experiment._fields), # type: ignore
     name='auc') 
   return data
-    
-def cheap_statistics(edgelist_file: str, output_path: str, verbose: bool = False
-  ) -> None:
-  """Print some statistics that are relatively cheap to compute.
-  This method is made for graphs that have multiple edges between
-  nodes (nx.MultiGraph).
-  """
-  result = dict()
-  
-  if verbose: print(f'{datetime.datetime.now()} Get edgelist')
-  edgelist = joblib.load(edgelist_file)
-  
-  if verbose: print(f'{datetime.datetime.now()} Get nx.MultiGraph')
-  multigraph = nx.from_pandas_edgelist(edgelist, create_using=nx.MultiGraph)
-  result['edges'] = multigraph.number_of_edges()
-  # if verbose: print(f'{datetime.datetime.now()} Get degree assortativity')
-  # result['degree assortativity (nx.MultiGraph)'] = (
-  #   nx.degree_assortativity_coefficient(multigraph))
-  if verbose: print(f'{datetime.datetime.now()} Get density')
-  result['density (nx.MultiGraph)'] = nx.density(multigraph)
-  
-  if verbose: print(f'{datetime.datetime.now()} Get GC of nx.MultiGraph')
-  multigraph_gc = _gc(multigraph)
-  del multigraph
-  multigraph_gc_number_of_edges = multigraph_gc.number_of_edges()
-  result['fraction edges in GC'] = (
-    multigraph_gc_number_of_edges / result['edges'])
-  del multigraph_gc
-  
-  if verbose: print(f'{datetime.datetime.now()} Get nx.Graph')
-  simplegraph = nx.from_pandas_edgelist(edgelist)
-  del edgelist
-  result['nodes'] = simplegraph.number_of_nodes()
-  result['avg events per pair'] = (
-    result['edges'] / simplegraph.number_of_edges())
-  if verbose: print(f'{datetime.datetime.now()} Get density')
-  result['density (nx.Graph)'] = nx.density(simplegraph)
-  if verbose: print(f'{datetime.datetime.now()} Get degree assortativity')
-  result['degree assortativity (nx.Graph)'] = (
-    nx.degree_assortativity_coefficient(simplegraph))
-  if verbose: print(f'{datetime.datetime.now()} Get clustering coefficient')
-  result['average clustering coefficient'] = (
-    nx.average_clustering(simplegraph))
-  
-  if verbose: print(f'{datetime.datetime.now()} Get GC of nx.Graph')
-  simplegraph_gc = _gc(simplegraph)
-  del simplegraph
-  result['fraction nodes in GC'] = (
-    simplegraph_gc.number_of_nodes() / result['nodes'])
-  result['avg events per pair in GC'] = (
-    multigraph_gc_number_of_edges / simplegraph_gc.number_of_edges())
-  
-  if verbose: print(f'{datetime.datetime.now()} Store results')
-  with open(os.path.join(output_path, 'stats.json'), 'w') as file:
-    json.dump(result, file)

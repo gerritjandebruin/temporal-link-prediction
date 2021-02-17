@@ -7,13 +7,10 @@ import networkx as nx
 import pandas as pd
 from tqdm.auto import tqdm
 
-from .strategies import AGGREGATION_STRATEGIES, TIME_STRATEGIES
+from . import AGGREGATION_STRATEGIES, TIME_STRATEGIES, NODEPAIR_STRATEGIES
 from .experiment import Experiment
 
 def diff(x): return x[1] - x[0]
-
-NODEPAIR_STRATEGIES = {
-  'sum': sum, 'diff': lambda x: abs(x[1]-x[0]), 'max': max, 'min': min}
 
 def _node_attributes_single_strategy(
   graph: nx.Graph, 
@@ -22,39 +19,41 @@ def _node_attributes_single_strategy(
   aggregation_strategy: typing.Callable, 
   verbose: bool):  
   result = list()
-  for u, v in tqdm(instances, 
-                   leave=False, 
-                   disable=not verbose, 
-                   unit='nodepair'):
+  iterator = tqdm(instances, leave=False, disable=not verbose, unit='nodepair')
+  for u, v in iterator:
     activity_u = aggregation_strategy(
-      [edge_attributes['datetime_transformed'] 
-       for nb in graph[u]
-       for edge_attributes in graph.get_edge_data(u, nb).values()])
+      [
+        edge_attributes['datetime_transformed'] 
+        for nb in graph[u]
+        for edge_attributes in graph.get_edge_data(u, nb).values()
+      ]
+    )
     activity_v = aggregation_strategy(
-      [edge_attributes['datetime_transformed'] 
-       for nb in graph[v]
-       for edge_attributes in graph.get_edge_data(v, nb).values()])
+      [
+        edge_attributes['datetime_transformed'] 
+        for nb in graph[v]
+        for edge_attributes in graph.get_edge_data(v, nb).values()
+      ]
+    )
     result.append(nodepair_strategy([activity_u, activity_v]))
   return result
 
 def na(
-  edgelist: pd.DataFrame,
-  instances: collections.abc.Iterable, *,
-  output_path: str, 
+  path: str, *, 
   nodepair_strategies: dict[str, typing.Callable] = NODEPAIR_STRATEGIES,
   aggregation_strategies: dict[str, typing.Callable] = AGGREGATION_STRATEGIES,
   time_strategies: dict[str, typing.Callable] = TIME_STRATEGIES,
   verbose: bool = False
 ) -> None:
-  """Determine some features based on node attributes.
+  """Determine some features based on node activity. This feature is calculated
+  over all possible combinations of the aggregation_strategies, 
+  nodepair_strategies, and time_strategies.
 
   Args:
-      edgelist (pd.DataFrame): [description]
-      instances (collections.abc.Iterable): [description]
-      output_path (str): [description]
+    path
   """
-  file = os.path.join(output_path, 'NA.pkl')
-  os.makedirs(output_path, exist_ok=True)
+  file = os.path.join(path, 'NA.pkl')
+  os.makedirs(path, exist_ok=True)
   if os.path.isfile(file):
     return
   

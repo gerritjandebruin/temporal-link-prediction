@@ -1,20 +1,17 @@
-import collections.abc
 import os
-import typing
 
 import joblib
 import networkx as nx
 import numpy as np
-import pandas as pd
 from tqdm.auto import tqdm
 
-from .strategies import AGGREGATION_STRATEGIES, TIME_STRATEGIES, Strategy
+from . import (AGGREGATION_STRATEGIES, TIME_STRATEGIES, Strategy,
+               get_edgelist_and_instances)
 from .experiment import Experiment
 
+
 def aa_time_aware(
-  edgelist: pd.DataFrame, 
-  instances: collections.abc.Iterable, *,
-  output_path: str,
+  path: str, *, 
   aggregation_strategies: dict[str, Strategy] = AGGREGATION_STRATEGIES,
   time_strategies: dict[str, Strategy] = TIME_STRATEGIES,
   verbose: bool = False
@@ -24,8 +21,8 @@ def aa_time_aware(
    combinations of the aggregation_strategies and time_strategies.
   
   Args:
-    edgelist: A pd.DataFrame with at least columns 'source' and 'target'.
-    instances: An iterable yielding pairs of nodes.
+    path: The path should contain edgelist_mature.pkl and 
+      instances_sampled.npy. Result is stored at path/AA_time_agnostic.pkl.
     aggregation_strategies: Optional; A list containing functions that can 
       aggregate multiple observed events between two nodes to a single value.
       See AGGREGATION_STRATEGIES.
@@ -39,37 +36,55 @@ def aa_time_aware(
     A dict with as key a NamedTuple (Experiment) and as value a np.array
       containing the scores.
   """
-  file = os.path.join(output_path, 'AA_time_aware.pkl')
-  os.makedirs(output_path, exist_ok=True)
+  file = os.path.join(path, 'AA_time_aware.pkl')
+  os.makedirs(path, exist_ok=True)
+
   if os.path.isfile(file):
     return None
   
+  edgelist, instances = get_edgelist_and_instances(
+    path, check_for_datetime=False)
+
   result = dict()
-  for time_str, time_func in tqdm(time_strategies.items(), 
-                                  desc='time strategies', 
-                                  disable=not verbose, 
-                                  leave=False):
+  time_iterator = tqdm(
+    time_strategies.items(), desc='time strategies', disable=not verbose, 
+    leave=False)
+  aggregation_iterator = tqdm(
+    aggregation_strategies.items(), desc='aggregation strategies', leave=False,
+    disable=not verbose)
+  instance_iterator = tqdm(instances, leave=False, disable=not verbose, 
+    unit='instances')
+
+
+  for time_str, time_func in time_iterator:
     edgelist['datetime_transformed'] = time_func(edgelist['datetime']) 
     graph = nx.from_pandas_edgelist(
       edgelist, edge_attr=True, create_using=nx.MultiGraph)
-    for agg_str, agg_func in tqdm(aggregation_strategies.items(), 
-                                  desc='aggregation strategies', 
-                                  leave=False,
-                                  disable=not verbose):
+    for agg_str, agg_func in aggregation_iterator:
       experiment = Experiment(
-          'AA', time_aware=True, aggregation_strategy=agg_str, 
-          time_strategy=time_str)
-      result[experiment] = np.array(
-        [sum(
-          [agg_func(
-            [edge_attributes['datetime_transformed']
-              for edge_attributes in graph.get_edge_data(u, z).values()]) *
-           agg_func(
-             [edge_attributes['datetime_transformed'] 
-              for edge_attributes in graph.get_edge_data(v, z).values()]) /
-           np.log(len(list(graph.neighbors(z))))
-           for z in nx.common_neighbors(graph, u, v)])
-         for u, v 
-         in tqdm(instances, leave=False, disable=not verbose, unit='instances')]
+        'AA', time_aware=True, aggregation_strategy=agg_str, 
+        time_strategy=time_str)
+      scores = [
+        sum(
+          [
+            agg_func(
+              [
+                edge_attributes['datetime_transformed']
+                for edge_attributes in graph.get_edge_data(u, z).values()
+              ]
+            ) *
+            agg_func(
+              [
+               edge_attributes['datetime_transformed'] 
+                for edge_attributes in graph.get_edge_data(v, z).values()
+              ]
+            ) /
+            np.log(len(list(graph.neighbors(z))))
+            for z in nx.common_neighbors(graph, u, v)
+          ]
         )
+        for u, v in instance_iterator
+      ]
+      result[experiment] = np.array(scores)
+  
   joblib.dump(result, file)
