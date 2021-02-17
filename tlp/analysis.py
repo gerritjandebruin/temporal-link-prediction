@@ -1,3 +1,5 @@
+import datetime
+import json
 import os
 import subprocess
 import tempfile
@@ -48,9 +50,6 @@ def plot_datetime(
                      label='maturing interval')
     plt.fill_between([t_split, t_max], 0, 1, color='C2', alpha=.5, 
                      label='probing interval')
-    datetimes.value_counts(normalize=True).sort_index().cumsum().plot(
-      xlabel='Year', ylabel='CDF', xlim=(datetimes.min(), datetimes.max()),
-      ylim=(0,1), grid=True, legend=False, label='cumulative distribution')
     plt.legend()
     
 def class_imbalance(targets: np.ndarray) -> pd.DataFrame:
@@ -73,6 +72,17 @@ def _teexmaster(g: nx.Graph, fraction=.01):
                                 for item in line.split('\t') if item != ''
                                ]).reshape(-1,2)
   return path_distribution
+  
+def _diameter(g: nx.Graph):
+  """Usage: average_path_length, diameter = teexmaster(graph)"""
+  with tempfile.NamedTemporaryFile() as tmp:
+    nx.write_edgelist(nx.convert_node_labels_to_integers(g), tmp.name, 
+                      delimiter='\t', data=False)
+    cp = subprocess.run(
+      ['./teexgraph/teexgraph'], 
+      input=f'load_undirected {tmp.name}\ndiameter', 
+      encoding='ascii', stdout=subprocess.PIPE)
+  return int(cp.stdout.split()[0])
 
 def _gc(g: nx.Graph) -> nx.Graph:
   """Return giant component."""
@@ -320,4 +330,57 @@ def get_auc(feature_dict: dict[Experiment, pd.Series], targets: np.ndarray
     name='auc') 
   return data
     
-    
+def cheap_statistics(edgelist_file: str, output_path: str, verbose: bool = False
+  ) -> None:
+  """Print some statistics that are relatively cheap to compute.
+  This method is made for graphs that have multiple edges between
+  nodes (nx.MultiGraph).
+  """
+  result = dict()
+  
+  if verbose: print(f'{datetime.datetime.now()} Get edgelist')
+  edgelist = joblib.load(edgelist_file)
+  
+  if verbose: print(f'{datetime.datetime.now()} Get nx.MultiGraph')
+  multigraph = nx.from_pandas_edgelist(edgelist, create_using=nx.MultiGraph)
+  result['edges'] = multigraph.number_of_edges()
+  # if verbose: print(f'{datetime.datetime.now()} Get degree assortativity')
+  # result['degree assortativity (nx.MultiGraph)'] = (
+  #   nx.degree_assortativity_coefficient(multigraph))
+  if verbose: print(f'{datetime.datetime.now()} Get density')
+  result['density (nx.MultiGraph)'] = nx.density(multigraph)
+  
+  if verbose: print(f'{datetime.datetime.now()} Get GC of nx.MultiGraph')
+  multigraph_gc = _gc(multigraph)
+  del multigraph
+  multigraph_gc_number_of_edges = multigraph_gc.number_of_edges()
+  result['fraction edges in GC'] = (
+    multigraph_gc_number_of_edges / result['edges'])
+  del multigraph_gc
+  
+  if verbose: print(f'{datetime.datetime.now()} Get nx.Graph')
+  simplegraph = nx.from_pandas_edgelist(edgelist)
+  del edgelist
+  result['nodes'] = simplegraph.number_of_nodes()
+  result['avg events per pair'] = (
+    result['edges'] / simplegraph.number_of_edges())
+  if verbose: print(f'{datetime.datetime.now()} Get density')
+  result['density (nx.Graph)'] = nx.density(simplegraph)
+  if verbose: print(f'{datetime.datetime.now()} Get degree assortativity')
+  result['degree assortativity (nx.Graph)'] = (
+    nx.degree_assortativity_coefficient(simplegraph))
+  if verbose: print(f'{datetime.datetime.now()} Get clustering coefficient')
+  result['average clustering coefficient'] = (
+    nx.average_clustering(simplegraph))
+  
+  if verbose: print(f'{datetime.datetime.now()} Get GC of nx.Graph')
+  simplegraph_gc = _gc(simplegraph)
+  del simplegraph
+  result['fraction nodes in GC'] = (
+    simplegraph_gc.number_of_nodes() / result['nodes'])
+  result['avg events per pair in GC'] = (
+    multigraph_gc_number_of_edges / simplegraph_gc.number_of_edges())
+  
+  if verbose: print(f'{datetime.datetime.now()} Store results')
+  with open(os.path.join(output_path, 'stats.json'), 'w') as file:
+    json.dump(result, file)
