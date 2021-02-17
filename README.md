@@ -6,6 +6,8 @@ The paper is about temporal link prediction.
 The current scope is to apply explainable, scalable, temporal features to a set of 31 temporal networks.
 Most networks are imported from http://konect.cc/ or http://snap.stanford.edu.
 
+For the Code Refinery Workshop, please have a look at [this folder](./tlp), as it contains pure Python code (no notebooks) and this code is used all-over the repository.
+
 Disclaimer:
 - I work on my own in this project, so no real collaboration.
 
