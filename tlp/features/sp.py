@@ -1,7 +1,6 @@
 import collections
 import collections.abc
 import os
-import typing
 
 import joblib
 import networkx as nx
@@ -9,8 +8,7 @@ import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
 
-from .strategies import AGGREGATION_STRATEGIES, TIME_STRATEGIES
-from .experiment import Experiment
+from .core import get_edgelist_and_instances, Experiment
 
 def single_source_number_paths_length_2(graph: nx.Graph, source):
   result = collections.Counter()
@@ -19,39 +17,37 @@ def single_source_number_paths_length_2(graph: nx.Graph, source):
       result[nnb] += 1
   return result
 
-def sp(
-    edgelist: pd.DataFrame, 
-    instances: np.ndarray, 
-    output_path: str, 
-    index: typing.Optional[int] = None):
+def sp(path: str, verbose: bool = False) -> None:
   """Determine the number of shortest paths available for each nodepair in 
   instances.
 
   Args:
-      edgelist (pd.DataFrame): [description]
-      instances (np.ndarray): [description]
-      output_path (str): [description]
+    path: The path should contain edgelist_mature.pkl and 
+      instances_sampled.npy. Result is stored at path/sp.pkl.
       verbose (bool, optional): [description]. Defaults to False.
   """
-  filename = os.path.join(output_path, 'sp.pkl')
+  file = os.path.join(path, 'sp.pkl')
+  os.makedirs(path, exist_ok=True)
 
-  # If file already exists, stop.
-  if os.path.isfile(filename): 
-    tqdm.write(f'{index:02} is skipped')
+  if os.path.isfile(file):
     return
-  
-  graph = nx.from_pandas_edgelist(edgelist)
+
+  edgelist, instances = get_edgelist_and_instances(
+    path, check_for_datetime=False)
+
+  G = nx.from_pandas_edgelist(edgelist)
+
   # Slow method, but providing also shortest paths at greater distance:
 #   [len(list(nx.all_shortest_paths(graph, *sample))) 
 #    for sample in tqdm(instances, disable=not verbose, leave=False)]
   
   paths_of_length_2 = {
-    node: single_source_number_paths_length_2(graph, node) 
+    node: single_source_number_paths_length_2(G, node) 
     for node 
-    in tqdm(instances[:,0], disable=not index, unit='node', desc=f'{index:02}', 
-            leave=False, position=index)
+    in tqdm(instances[:,0], disable=not verbose, unit='node', leave=False)
   }
   
-  experiment = Experiment('Number of shortest paths', time_aware=False)
-  result = {experiment: [paths_of_length_2[u][v] for u, v in instances]}
-  joblib.dump(result, filename=filename)
+  scores = [paths_of_length_2[u][v] for u, v in instances]
+  result = {Experiment('sp', time_aware=False): scores}
+
+  joblib.dump(result, file)

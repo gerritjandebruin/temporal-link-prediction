@@ -1,18 +1,22 @@
 import collections.abc
+from numbers import Real
+import typing
 
 import numpy as np
+import pandas as pd
 
 # Typing
 Strategy = collections.abc.Callable
+Strategies = dict[str, Strategy]
 
 # All transformed datetime values are mapped between LOWER_BOUND and 1.
 LOWER_BOUND = 0.2
 
-def _exp_time(x: np.ndarray) -> np.ndarray:
+def _exp_time(x: pd.Series) -> pd.Series:
   """Apply y=3*exp(x) and normalize it between (0,1)."""
   return np.exp(3*x) / np.exp(3)
 
-def _rescale(x: np.ndarray, *, lower_bound: float = 0.2) -> np.ndarray:
+def _rescale(x: pd.Series, *, lower_bound: float = 0.2) -> pd.Series:
   """_rescale the provided array.
 
   Args:
@@ -22,19 +26,23 @@ def _rescale(x: np.ndarray, *, lower_bound: float = 0.2) -> np.ndarray:
   lowest, highest = np.quantile(x, [0, 1])
   return lower_bound + (1-lower_bound)*(x-lowest)/(highest-lowest)
 
+def lin(x: pd.Series, lower_bound=LOWER_BOUND):
+  return _rescale(_rescale(x.astype(int)), lower_bound=lower_bound)
+
+def exp(x: pd.Series, lower_bound=LOWER_BOUND):
+  return _rescale( _exp_time(_rescale(x.astype(int))), lower_bound=lower_bound)
+
+def sqrt(x: pd.Series, lower_bound=LOWER_BOUND):
+  return _rescale(np.sqrt(_rescale(x.astype(int))), lower_bound=lower_bound)
+
 # All strategies used to transform the datetime values.
-TIME_STRATEGIES = {
-  'lin': lambda x: _rescale(
-    _rescale(x.astype(int)), lower_bound=LOWER_BOUND), 
-  'exp': lambda x: _rescale(
-    _exp_time(_rescale(x.astype(int))), lower_bound=LOWER_BOUND), 
-  'sqrt': lambda x: _rescale(
-    np.sqrt(_rescale(x.astype(int))), lower_bound=LOWER_BOUND)}
+TIME_STRATEGIES = {'lin': lin, 'exp': exp, 'sqrt': sqrt}
 
 # All strategies used to aggregate multiple edges between two nodes in case of
 # graphs with discrete event data.
 AGGREGATION_STRATEGIES = {
   'mean': np.mean, 'sum': np.sum, 'max': np.max, 'median': np.median}
 
-NODEPAIR_STRATEGIES = {
-  'sum': sum, 'diff': lambda x: abs(x[1]-x[0]), 'max': max, 'min': min}
+def diff(x: tuple[Real, Real]) -> Real: return x[1] - x[0]
+
+NODEPAIR_STRATEGIES = {'sum': sum, 'diff': diff, 'max': max, 'min': min}
