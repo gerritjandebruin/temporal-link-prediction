@@ -5,5 +5,5 @@ from .sp import sp
 from .strategies import (AGGREGATION_STRATEGIES, NODEPAIR_STRATEGIES,
                          TIME_STRATEGIES, Strategies)
 from .core import Experiment
-from .featureConstruction import feature_construction
+from .featureConstruction import feature_construction as construction
 
