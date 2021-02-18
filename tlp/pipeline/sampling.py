@@ -4,13 +4,17 @@ import typing
 import numpy as np
 from numpy.random import sample
 
+from .core import file_exists
+
 def _sample(array: np.ndarray, size: int) -> np.ndarray:
   """Take a sample (with replacement) of a given size n along the first axis of 
   array.
   """
   return array[np.random.randint(len(array), size=size)]
 
-def balanced_sample(path: str, *, sample_size: typing.Optional[int]) -> None:
+def balanced_sample(
+  path: str, *, sample_size: typing.Optional[int], verbose: bool = False
+  ) -> None:
   """Take n positive and n negative samples from the provided instances. Whether
   a instance is positive, is determined by the targets.
   The instances should be a np.ndarray of shape (n,2) provided at 
@@ -23,14 +27,13 @@ def balanced_sample(path: str, *, sample_size: typing.Optional[int]) -> None:
     path: str
     sample_size: Optional; Take this number of positive and this number of 
       negative samples. If None, do not sample and return all instances.
+    verbose: Optional; Defaults to False.
   """
   instances_sampled_file = os.path.join(path, 'instances_sampled.npy')
-  assert not os.path.isfile(instances_sampled_file), (
-    f'{instances_sampled_file} already exists')
-  
-  targets_sampled_file = os.path.join(path, 'targets_sampled.npy')
-  assert not os.path.isfile(targets_sampled_file), (
-    f'{targets_sampled_file} already exists')  
+  targets_sampled_file = os.path.join(path, 'instances_sampled.npy')
+  if file_exists([instances_sampled_file, targets_sampled_file], 
+                 verbose=verbose): 
+    return
   
   instances_file = os.path.join(path, 'instances.pkl')
   assert os.path.isfile(instances_file), f'{instances_file} does not exist'

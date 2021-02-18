@@ -6,8 +6,9 @@ import typing
 
 import numpy as np
 import pandas as pd
-
 from tqdm.auto import tqdm
+
+from .core import file_exists
 
 def _download(url: str, dst: str, verbose: bool = False):
     """
@@ -83,7 +84,7 @@ def get_edgelist_from_konect(url: str, *, path: str, verbose: bool = False
   output_file = os.path.join(path, 'edgelist.pkl')
   
   # Check if output file not already present.
-  assert not os.path.isfile(output_file), f"{output_file} already exists"
+  if file_exists(output_file, verbose=verbose): return
   
   # Edgelist is stored in the out.* file contained in the tar archive.
   out_location = os.path.join(path, 'out') 

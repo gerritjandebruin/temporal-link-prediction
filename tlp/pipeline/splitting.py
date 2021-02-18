@@ -4,6 +4,8 @@ import typing
 
 import pandas as pd
 
+from .core import file_exists
+
 # Split the edgelist at this quantile into the mature and probe edgelist.
 SPLIT_FRACTION = 2/3  
 
@@ -12,7 +14,8 @@ def split_in_intervals(
   split_fraction: typing.Optional[float],
   t_min: typing.Optional[pd.Timestamp] = None,
   t_split: typing.Optional[pd.Timestamp] = None,
-  t_max: typing.Optional[pd.Timestamp] = None
+  t_max: typing.Optional[pd.Timestamp] = None,
+  verbose: bool = False
   ) -> None:
   """Split the edgelist into the edges belonging to the maturing and probing 
   interval. The edgelist should be present as a pickled pd.DataFrame at 
@@ -27,6 +30,7 @@ def split_in_intervals(
     t_min, t_split, t_max: Optional; Timestamps used to mark the beginning of 
       the maturing interval, the end of the maturing interval and the end of the
       probing interval, respectively.
+    verbose: Optional; Defaults to False.
   """
   edgelist_file = os.path.join(path, 'edgelist.pkl')
   assert os.path.isfile(edgelist_file), f'{edgelist_file} does not exists'
@@ -34,10 +38,8 @@ def split_in_intervals(
   
   edgelist_mature_file = os.path.join(path, 'edgelist_mature.pkl')
   edgelist_probe_file = os.path.join(path, 'edgelist_probe.pkl')
-  assert not os.path.isfile(edgelist_mature_file), (
-    f'{edgelist_mature_file} already exists')
-  assert not os.path.isfile(edgelist_probe_file), (
-    f'{edgelist_probe_file} already exists')
+  if file_exists([edgelist_mature_file, edgelist_probe_file], verbose=verbose): 
+    return
   
   if t_min is None:
     t_min = edgelist['datetime'].min()

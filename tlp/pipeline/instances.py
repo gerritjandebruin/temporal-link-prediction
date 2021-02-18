@@ -6,6 +6,8 @@ import networkx as nx
 import numpy as np
 from tqdm.auto import tqdm
 
+from .core import file_exists
+
 # Only not connected node pairs within cutoff distance in the graph of the 
 # maturing interval are used.
 CUTOFF = 2 
@@ -27,7 +29,7 @@ def get_instances(
     verbose: Optional; If true, show tqdm progressbar.
   """ 
   output_file = os.path.join(path, 'instances.npy')
-  assert not os.path.isfile(output_file), f'{output_file} already exists'
+  if file_exists(output_file, verbose=verbose): return
   
   edgelist_mature_file = os.path.join(path, 'edgelist_mature.pkl')
   assert os.path.isfile(edgelist_mature_file), (
