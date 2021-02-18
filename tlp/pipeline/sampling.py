@@ -34,11 +34,11 @@ def balanced_sample(
                  verbose=verbose): 
     return
   
-  instances_file = os.path.join(path, 'instances.pkl')
+  instances_file = os.path.join(path, 'instances.npy')
   assert os.path.isfile(instances_file), f'{instances_file} does not exist'
   instances = np.load(instances_file)   
   
-  targets_file = os.path.join(path, 'targets.pkl')
+  targets_file = os.path.join(path, 'targets.npy')
   assert os.path.isfile(targets_file), f'{targets_file} does not exist'
   targets = np.load(targets_file)    
   
