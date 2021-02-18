@@ -1,12 +1,11 @@
+import datetime
 import os
 import re
-import requests
+import typing
 
 import joblib
 import numpy as np
 from tqdm.auto import tqdm
-
-from .features import Experiment
 
 class ProgressParallel(joblib.Parallel):
   def __init__(self, use_tqdm=True, total=None, desc=None, unit='it', *args, 
@@ -27,12 +26,39 @@ class ProgressParallel(joblib.Parallel):
       self._pbar.total = self.n_dispatched_tasks
     self._pbar.n = self.n_completed_tasks
     self._pbar.refresh()
+    
+def print_status(message: str) -> None:
+  """Print a message along with the current time. Usefull for logging."""
+  tqdm.write(f'{datetime.datetime.now()} {message}')
+  
+def load(file: str, verbose: bool = False):
+  """Try to pickle load the file."""
+  if verbose: print_status(f'Read in {file}')
+  assert os.path.isfile(file)
+  if file.endswith('.npy'):
+    return np.load(file)
+  else:
+    return joblib.load(file)
+  
+def file_exists(files: typing.Union[str, list[str]], *, verbose: bool = False
+                ) -> bool:
+  """Check if file (or files) exists. If any exists, return True."""
+  if isinstance(files, str):
+    files = [files]
+    
+  for file in files:
+    if os.path.isfile(file):
+      if verbose: print_status(f"{file} already exists")
+      return True
+      
+  return False
         
 def recursive_file_lookup(filename):
   result = dict()
   for dirpath, dirnames, files in os.walk('./data'):
     if filename in files:
-      result[dirpath.split('/')[2]] = joblib.load(os.path.join(dirpath, filename))
+      result[dirpath.split('/')[2]] = (
+        joblib.load(os.path.join(dirpath, filename)))
   return dict(sorted(result.items()))
   
 def recursive_delete(filename) -> None:
@@ -53,13 +79,4 @@ def get_labels_from_notebook_names(filepath) -> dict[str, str]:
     for file in os.listdir('.')
     if file.endswith('.ipynb') and re.match(r'[0-9]{2}', file)
   }
-  return dict(sorted(labels.items()))
-  
-def recursive_feature_lookup(path: str) -> dict[Experiment, np.ndarray]:
-  result = dict()
-  for file in os.listdir(path):
-    filepath = os.path.join(path, file)
-    if os.path.isfile(filepath):
-      result.update(joblib.load(filepath))
-  return result
-                
+  return dict(sorted(labels.items()))                

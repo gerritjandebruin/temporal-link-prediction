@@ -6,7 +6,7 @@ import networkx as nx
 import numpy as np
 from tqdm.auto import tqdm
 
-from .core import file_exists
+from ..helpers import print_status, file_exists
 
 # Only not connected node pairs within cutoff distance in the graph of the 
 # maturing interval are used.
@@ -28,6 +28,8 @@ def get_instances(
     cutoff: 
     verbose: Optional; If true, show tqdm progressbar.
   """ 
+  if verbose: 
+    print_status('Start get_instances(...). Read in edgelist_mature.pkl')
   output_file = os.path.join(path, 'instances.npy')
   if file_exists(output_file, verbose=verbose): return
   
@@ -36,9 +38,11 @@ def get_instances(
     f'{edgelist_mature_file} does not exist')
   edgelist_mature = joblib.load(edgelist_mature_file)
   
+  if verbose: print_status('Create nx.Multigraph object.')
   graph_mature=nx.from_pandas_edgelist(
     edgelist_mature, edge_attr=True, create_using=nx.MultiGraph)
   
+  if verbose: print_status('Collect instances')
   instances = [
     (node, neighborhood)
     for node 
@@ -50,5 +54,6 @@ def get_instances(
     if distance > 1 and node < neighborhood
   ]
   
+  if verbose: print_status('Store result')
   instances = np.array(instances)
   np.save(output_file, instances)

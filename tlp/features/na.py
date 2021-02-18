@@ -10,6 +10,7 @@ from tqdm.auto import tqdm
 from .core import Experiment, get_edgelist_and_instances
 from .strategies import (AGGREGATION_STRATEGIES, NODEPAIR_STRATEGIES,
                          TIME_STRATEGIES, Strategies, Strategy)
+from ..helpers import file_exists, print_status
 
 
 def _node_attributes_single_strategy(
@@ -65,39 +66,33 @@ def na(
       datetime column of the edgelist to a float. See tlp.TIME_STRATEGIES for
       default strategies.
   """
+  if verbose: print_status('Start na(...')   
+                           
   file = os.path.join(path, 'na.pkl')
+  if file_exists(file, verbose=verbose): return
+  
   os.makedirs(path, exist_ok=True)
 
-  if os.path.isfile(file):
-    return
-
+  # Read in 
   edgelist, instances = get_edgelist_and_instances(
-    path, check_for_datetime=False)
+    path, check_for_datetime=False, verbose=verbose)
   
   result = dict()
 
-  # Three iterators
-  time_strategies_iterator = tqdm(
-    time_strategies.items(), leave=False, disable=not verbose, 
-    desc='Time strategy')
-
-  aggregation_strategies_iterator = tqdm(
-    aggregation_strategies.items(), leave=False, disable=not verbose,
-    desc='Aggregation strategy')
-
-  nodepair_strategies_iterator = tqdm(
-    nodepair_strategies.items(), leave=False, disable=not verbose,
-    desc='Nodepair strategy')
-
-  # Do the calculation.
-  for time_str, time_func in time_strategies_iterator:
+  for time_str, time_func in tqdm(time_strategies.items(), leave=False, 
+                                  disable=not verbose, desc='Time strategy'):
     edgelist['datetime_transformed'] = time_func(edgelist['datetime'])
 
     G = nx.from_pandas_edgelist(
       edgelist, edge_attr=True, create_using=nx.MultiGraph)
 
-    for agg_str, agg_func in aggregation_strategies_iterator:
-      for nodepair_str, nodepair_func in nodepair_strategies_iterator:
+    for agg_str, agg_func in tqdm(aggregation_strategies.items(), leave=False, 
+                                  disable=not verbose,
+                                  desc='Aggregation strategy'):
+      for nodepair_str, nodepair_func in tqdm(nodepair_strategies.items(), 
+                                              leave=False, disable=not verbose,
+                                              desc='Nodepair strategy'):
+        # Calculation
         experiment = Experiment(
           feature='NA',
           time_aware=True,
@@ -116,5 +111,6 @@ def na(
         )
 
   # Store results
+  print_status('Store results')
   joblib.dump(result, file)
   

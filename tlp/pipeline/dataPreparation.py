@@ -50,7 +50,7 @@ def data_preparation(
   # Step 1
   split_in_intervals(
     path, split_fraction=split_fraction, t_min=t_min, t_split=t_split, 
-    t_max=t_max
+    t_max=t_max, verbose=verbose
   )
   
   # Step 2
@@ -60,4 +60,4 @@ def data_preparation(
   get_targets(path, verbose=verbose)
   
   # Step 4
-  balanced_sample(path, sample_size=sample_size)
+  balanced_sample(path, sample_size=sample_size, verbose=verbose)

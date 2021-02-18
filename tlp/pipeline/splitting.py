@@ -4,7 +4,7 @@ import typing
 
 import pandas as pd
 
-from .core import file_exists
+from ..helpers import print_status, load, file_exists
 
 # Split the edgelist at this quantile into the mature and probe edgelist.
 SPLIT_FRACTION = 2/3  
@@ -32,15 +32,17 @@ def split_in_intervals(
       probing interval, respectively.
     verbose: Optional; Defaults to False.
   """
-  edgelist_file = os.path.join(path, 'edgelist.pkl')
-  assert os.path.isfile(edgelist_file), f'{edgelist_file} does not exists'
-  edgelist = joblib.load(edgelist_file)
+  if verbose: 
+    print_status('Start split_in_intervals(...). Read edgelist.pkl.')
+    
+  edgelist = load(os.path.join(path, 'edgelist.pkl'), verbose=verbose)
   
   edgelist_mature_file = os.path.join(path, 'edgelist_mature.pkl')
   edgelist_probe_file = os.path.join(path, 'edgelist_probe.pkl')
   if file_exists([edgelist_mature_file, edgelist_probe_file], verbose=verbose): 
     return
   
+  if verbose: print_status('Determine split times.')
   if t_min is None:
     t_min = edgelist['datetime'].min()
   if t_split is None:
@@ -54,8 +56,10 @@ def split_in_intervals(
   assert isinstance(t_split, pd.Timestamp)
   assert isinstance(t_max, pd.Timestamp)
   
+  if verbose: print_status('Perform splitting')
   edgelist_mature = edgelist.loc[edgelist['datetime'].between(t_min, t_split)]
   edgelist_probe = edgelist.loc[edgelist['datetime'].between(t_split, t_max)]
   
+  if verbose: print_status('Store results')
   edgelist_mature.to_pickle(edgelist_mature_file)
   edgelist_probe.to_pickle(edgelist_probe_file)

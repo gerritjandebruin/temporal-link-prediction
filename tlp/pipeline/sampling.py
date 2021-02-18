@@ -3,7 +3,7 @@ import typing
 
 import numpy as np
 
-from .core import file_exists
+from ..helpers import load, print_status, file_exists
 
 def _sample(array: np.ndarray, size: int) -> np.ndarray:
   """Take a sample (with replacement) of a given size n along the first axis of 
@@ -28,28 +28,28 @@ def balanced_sample(
       negative samples. If None, do not sample and return all instances.
     verbose: Optional; Defaults to False.
   """
+  if verbose: print_status('Start balanced_sample(...).')
   instances_sampled_file = os.path.join(path, 'instances_sampled.npy')
-  targets_sampled_file = os.path.join(path, 'instances_sampled.npy')
+  targets_sampled_file = os.path.join(path, 'targets_sampled.npy')
   if file_exists([instances_sampled_file, targets_sampled_file], 
                  verbose=verbose): 
     return
   
-  instances_file = os.path.join(path, 'instances.npy')
-  assert os.path.isfile(instances_file), f'{instances_file} does not exist'
-  instances = np.load(instances_file)   
-  
-  targets_file = os.path.join(path, 'targets.npy')
-  assert os.path.isfile(targets_file), f'{targets_file} does not exist'
-  targets = np.load(targets_file)    
+  instances = load(os.path.join(path, 'instances.npy'), verbose=verbose)
+  targets = load(os.path.join(path, 'targets.npy'), verbose=verbose)     
   
   if sample_size is None:
+    print_status('No sampling performed. Store result nevertheless.')
     np.save(instances_sampled_file, instances)
     np.save(targets_sampled_file, targets) 
     
   else:  
+    print_status('Sample positives.')
     positives = _sample(instances[targets], sample_size)
+    print_status('Sample negatives.')
     negatives = _sample(instances[~targets], sample_size)
     
+    print_status('Store results.')
     instances_sampled = np.concatenate([negatives, positives])
     np.save(instances_sampled_file, instances_sampled)
     

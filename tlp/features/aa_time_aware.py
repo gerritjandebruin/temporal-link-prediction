@@ -7,6 +7,7 @@ from tqdm.auto import tqdm
 
 from .strategies import AGGREGATION_STRATEGIES, TIME_STRATEGIES, Strategies
 from .core import get_edgelist_and_instances, Experiment
+from ..helpers import file_exists, print_status
 
 
 def aa_time_aware(
@@ -34,34 +35,28 @@ def aa_time_aware(
     A dict with as key a NamedTuple (Experiment) and as value a np.array
       containing the scores.
   """
+  if verbose: print_status('Start aa_time_agnostic(...)')
+  
   file = os.path.join(path, 'aa_time_aware.pkl')
+  if file_exists(file, verbose=verbose): return
+  
   os.makedirs(path, exist_ok=True)
 
-  if os.path.isfile(file):
-    return
-
-  edgelist, instances = get_edgelist_and_instances(path)
+  # Read in
+  edgelist, instances = get_edgelist_and_instances(path, verbose=verbose)
 
   result = dict()
 
-  # Two iterators
-  time_iterator = tqdm(
-    time_strategies.items(), desc='time strategies', disable=not verbose, 
-    leave=False)
-
-  aggregation_iterator = tqdm(
-    aggregation_strategies.items(), desc='aggregation strategies', leave=False,
-    disable=not verbose)
-
-  instance_iterator = tqdm(instances, leave=False, disable=not verbose, 
-    unit='instances')
-
-
-  for time_str, time_func in time_iterator:
+  for time_str, time_func in tqdm(time_strategies.items(), 
+                                  desc='time strategies', disable=not verbose, 
+                                  leave=False):
     edgelist['datetime_transformed'] = time_func(edgelist['datetime']) 
     G = nx.from_pandas_edgelist(
       edgelist, edge_attr=True, create_using=nx.MultiGraph)
-    for agg_str, agg_func in aggregation_iterator:
+    for agg_str, agg_func in tqdm(aggregation_strategies.items(), 
+                                  desc='aggregation strategies', leave=False,
+                                  disable=not verbose):
+      # Calculation
       experiment = Experiment(
         'AA', time_aware=True, aggregation_strategy=agg_str, 
         time_strategy=time_str)
@@ -84,8 +79,11 @@ def aa_time_aware(
             for z in nx.common_neighbors(G, u, v)
           ]
         )
-        for u, v in instance_iterator
+        for u, v in tqdm(instances, leave=False, disable=not verbose, 
+                         unit='instances')
       ]
       result[experiment] = np.array(scores)
   
+  # Store
+  print_status('Store result')
   joblib.dump(result, file)

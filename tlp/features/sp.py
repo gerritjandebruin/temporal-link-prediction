@@ -9,6 +9,7 @@ import pandas as pd
 from tqdm.auto import tqdm
 
 from .core import get_edgelist_and_instances, Experiment
+from ..helpers import file_exists, print_status
 
 def single_source_number_paths_length_2(graph: nx.Graph, source):
   result = collections.Counter()
@@ -26,14 +27,16 @@ def sp(path: str, verbose: bool = False) -> None:
       instances_sampled.npy. Result is stored at path/sp.pkl.
       verbose (bool, optional): [description]. Defaults to False.
   """
+  if verbose: print_status('Start sp(...)')
+  
   file = os.path.join(path, 'sp.pkl')
+  if file_exists(file, verbose=verbose): return 
+  
   os.makedirs(path, exist_ok=True)
 
-  if os.path.isfile(file):
-    return
-
+  # Read in
   edgelist, instances = get_edgelist_and_instances(
-    path, check_for_datetime=False)
+    path, check_for_datetime=False, verbose=verbose)
 
   G = nx.from_pandas_edgelist(edgelist)
 
@@ -41,6 +44,7 @@ def sp(path: str, verbose: bool = False) -> None:
 #   [len(list(nx.all_shortest_paths(graph, *sample))) 
 #    for sample in tqdm(instances, disable=not verbose, leave=False)]
   
+  # Calculation
   paths_of_length_2 = {
     node: single_source_number_paths_length_2(G, node) 
     for node 
@@ -50,4 +54,6 @@ def sp(path: str, verbose: bool = False) -> None:
   scores = [paths_of_length_2[u][v] for u, v in instances]
   result = {Experiment('sp', time_aware=False): scores}
 
+  # Store result
+  if verbose: print_status('Store result')
   joblib.dump(result, file)
