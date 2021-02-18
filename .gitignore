@@ -1,7 +1,11 @@
 # Temporary dirs
-data/
 scripts/
 old-data/
+data/*
+# Except these ones, as they were used in earlier work.
+!data/05
+data/05/*
+!data/05/edgelist.pkl
 
 # Project settings
 *settings.json
