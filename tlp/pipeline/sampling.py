@@ -2,7 +2,6 @@ import os
 import typing
 
 import numpy as np
-from numpy.random import sample
 
 from .core import file_exists
 
