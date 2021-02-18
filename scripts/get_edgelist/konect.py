@@ -33,12 +33,13 @@ urls = {
   27: 'http://konect.cc/files/download.tsv.wikipedia-growth.tar.bz2',
 }
 
-# Parallel
-# tlp.ProgressParallel(n_jobs=len(urls), total=len(urls))(
-#   joblib.delayed(tlp.get_edgelist_from_konect)
-#   (url, path=f'data/{index:02}') for index, url in urls.items()
-# )
+if __name__ == "__main__":
+  # Parallel
+  # tlp.ProgressParallel(n_jobs=len(urls), total=len(urls))(
+  #   joblib.delayed(tlp.get_edgelist_from_konect)
+  #   (url, path=f'data/{index:02}') for index, url in urls.items()
+  # )
 
-# For loop
-for index, url in tqdm(urls.items(), mininterval=0):
-  tlp.get_edgelist_from_konect(url, path=f'data/{index:02}', verbose=True)
+  # For loop
+  for index, url in tqdm(urls.items(), mininterval=0):
+    tlp.get_edgelist_from_konect(url, path=f'data/{index:02}', verbose=True)

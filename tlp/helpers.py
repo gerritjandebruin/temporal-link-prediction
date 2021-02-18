@@ -5,6 +5,7 @@ import typing
 
 import joblib
 import numpy as np
+import requests
 from tqdm.auto import tqdm
 
 class ProgressParallel(joblib.Parallel):
@@ -80,3 +81,30 @@ def get_labels_from_notebook_names(filepath) -> dict[str, str]:
     if file.endswith('.ipynb') and re.match(r'[0-9]{2}', file)
   }
   return dict(sorted(labels.items()))                
+  
+def download(url: str, dst: str, verbose: bool = False):
+  """
+  @param: url to download file
+  @param: dst place to put the file
+  @param: if verbose, show tqdm
+  
+  Source: https://gist.github.com/wy193777/0e2a4932e81afc6aa4c8f7a2984f34e2
+  """
+  file_size = int(requests.head(url).headers["Content-Length"])
+  if os.path.exists(dst):
+    first_byte = os.path.getsize(dst)
+  else:
+    first_byte = 0
+  if first_byte >= file_size:
+    return file_size
+  header = {"Range": "bytes=%s-%s" % (first_byte, file_size)}
+  pbar = tqdm(
+    total=file_size, initial=first_byte, unit='B', unit_scale=True, 
+    desc=url.split('/')[-1], disable=not verbose)
+  req = requests.get(url, headers=header, stream=True)
+  with(open(dst, 'ab')) as f:
+    for chunk in req.iter_content(chunk_size=1024):
+      if chunk:
+        f.write(chunk)
+        pbar.update(1024)
+  pbar.close()
