@@ -1,5 +1,4 @@
 # Temporary dirs
-scripts/
 old-data/
 data/*
 # Except these ones, as they were used in earlier work.
