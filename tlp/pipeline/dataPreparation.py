@@ -1,5 +1,4 @@
-from numpy.random import sample
-from pipeline.sampling import balanced_sample
+from .sampling import balanced_sample
 import typing
 
 import pandas as pd

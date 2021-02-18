@@ -4,5 +4,6 @@ from .na import na
 from .sp import sp
 from .strategies import (AGGREGATION_STRATEGIES, NODEPAIR_STRATEGIES,
                          TIME_STRATEGIES, Strategies)
-from .core import feature_construction, Experiment
+from .core import Experiment
+from .featureConstruction import feature_construction
 

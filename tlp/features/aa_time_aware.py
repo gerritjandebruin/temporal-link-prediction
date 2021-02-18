@@ -5,7 +5,7 @@ import networkx as nx
 import numpy as np
 from tqdm.auto import tqdm
 
-from . import AGGREGATION_STRATEGIES, TIME_STRATEGIES, Strategies
+from .strategies import AGGREGATION_STRATEGIES, TIME_STRATEGIES, Strategies
 from .core import get_edgelist_and_instances, Experiment
 
 
