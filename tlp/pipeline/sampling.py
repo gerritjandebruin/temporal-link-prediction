@@ -44,12 +44,12 @@ def balanced_sample(
     np.save(targets_sampled_file, targets) 
     
   else:  
-    print_status('Sample positives.')
+    if verbose: print_status('Sample positives.')
     positives = _sample(instances[targets], sample_size)
-    print_status('Sample negatives.')
+    if verbose: print_status('Sample negatives.')
     negatives = _sample(instances[~targets], sample_size)
     
-    print_status('Store results.')
+    if verbose: print_status('Store results.')
     instances_sampled = np.concatenate([negatives, positives])
     np.save(instances_sampled_file, instances_sampled)
     
