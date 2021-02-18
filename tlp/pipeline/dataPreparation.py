@@ -30,7 +30,8 @@ def data_preparation(
   4. Sample to balance from the step 3.
   
   Args:
-    path
+    path: In this path the file edgelist.pkl should be present. This should be
+      a pd.DataFrame containing the columns source, target and datetime.
     split_fraction: Optional; If t_split is not provided, the split into the 
       maturing and probing interval will happen such that split_fraction of 
       edges will end up in the maturing interval.
