@@ -94,8 +94,8 @@ def get_edgelist_from_konect(url: str, *, path: str, verbose: bool = False
   
   # CSV file to pd.DataFrame
   edgelist = pd.read_csv(
-    os.path.join(out_location, 'out'), delim_whitespace=True, engine='python', 
-    comment='%', names=['source', 'target', 'weight', 'datetime'])
+    out_location, delim_whitespace=True, engine='python', comment='%', 
+    names=['source', 'target', 'weight', 'datetime'])
   edgelist = edgelist[edgelist['datetime'] != 0]
   
   # Check for signed network
