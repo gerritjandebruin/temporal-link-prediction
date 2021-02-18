@@ -1,5 +1,7 @@
 # Temporary dirs
-[0-9][0-9]
+data/
+scripts/
+old-data/
 
 # Project settings
 *settings.json
