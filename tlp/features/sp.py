@@ -29,10 +29,11 @@ def sp(path: str, verbose: bool = False) -> None:
   """
   if verbose: print_status('Start sp(...)')
   
-  file = os.path.join(path, 'sp.pkl')
+  feature_path = os.path.join(path, 'features')
+  file = os.path.join(feature_path, 'sp.pkl')
   if file_exists(file, verbose=verbose): return 
   
-  os.makedirs(path, exist_ok=True)
+  os.makedirs(feature_path, exist_ok=True)
 
   # Read in
   edgelist, instances = get_edgelist_and_instances(

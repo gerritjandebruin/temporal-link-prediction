@@ -1,3 +1,4 @@
+import argparse
 import collections
 import os
 
@@ -7,8 +8,8 @@ from tqdm.auto import tqdm
 
 import tlp
 
-make_undirected = {12: False}
-make_undirected = collections.defaultdict(lambda: True, make_undirected)
+# make_undirected = {12: False}
+# make_undirected = collections.defaultdict(lambda: True, make_undirected)
 
 adjusted_intervals = {
   1: {
@@ -21,18 +22,28 @@ adjusted_intervals = {
 adjusted_intervals = collections.defaultdict(lambda: dict(), adjusted_intervals)
 
 if __name__ == "__main__":
+  indices = sorted([int(path) for path in os.listdir('data')])
+  
+  # Check
+  # print('The following indices are not yet processed:')
+  # for index in indices:
+  #   path = os.path.join('data', f'{index:02}', 'instances_sampled.npy')
+  #   if not os.path.isfile(path): print(index)
+
+  # Run only single index
+  path = os.path.join('data', '27')
+  tlp.data_preparation(path, **adjusted_intervals[17], verbose=True)
+
   # Single core
-  # for index in tqdm(os.listdir('data')):
-  #   path = os.path.join('data', index)
-  #   index = int(index)
+  # for index in tqdm(indices, mininterval=0, unit='graph'):
+  #   path = os.path.join('data', f'{index:02}')
   #   tlp.data_preparation(path, **adjusted_intervals[index], verbose=True)
     
   # Multicore
-  indices = [int(path) for path in os.listdir('data')]
-  tlp.ProgressParallel(n_jobs=len(indices), total=len(indices))(
-    joblib.delayed(tlp.data_preparation)
-    (path=os.path.join('data', str(index)), **adjusted_intervals[index])
-    for index in indices
-  )
+  # joblib.Parallel(n_jobs=len(indices))(
+  #   joblib.delayed(tlp.data_preparation)
+  #   (path=os.path.join('data', f'{index:02}'), **adjusted_intervals[index])
+  #   for index in indices
+  # )
     
     

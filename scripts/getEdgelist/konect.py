@@ -40,6 +40,8 @@ if __name__ == "__main__":
   #   (url, path=f'data/{index:02}') for index, url in urls.items()
   # )
 
+
+
   # For loop
   for index, url in tqdm(urls.items(), mininterval=0):
     tlp.get_edgelist_from_konect(url, path=f'data/{index:02}', verbose=True)

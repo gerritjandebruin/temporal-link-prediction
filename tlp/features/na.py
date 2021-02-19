@@ -67,11 +67,12 @@ def na(
       default strategies.
   """
   if verbose: print_status('Start na(...')   
-                           
-  file = os.path.join(path, 'na.pkl')
+    
+  feature_path = os.path.join(path, 'features')                       
+  file = os.path.join(feature_path, 'na.pkl')
   if file_exists(file, verbose=verbose): return
   
-  os.makedirs(path, exist_ok=True)
+  os.makedirs(feature_path, exist_ok=True)
 
   # Read in 
   edgelist, instances = get_edgelist_and_instances(
@@ -111,6 +112,6 @@ def na(
         )
 
   # Store results
-  print_status('Store results')
+  if verbose: print_status('Store results')
   joblib.dump(result, file)
   

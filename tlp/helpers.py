@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 import re
 import typing
@@ -19,7 +20,7 @@ class ProgressParallel(joblib.Parallel):
 
   def __call__(self, *args, **kwargs):
     with tqdm(disable=not self._use_tqdm, total=self._total, 
-              desc=self._desc, unit=self._unit) as self._pbar:
+              desc=self._desc, unit=self._unit, mininterval=0) as self._pbar:
       return joblib.Parallel.__call__(self, *args, **kwargs)
 
   def print_progress(self):
@@ -35,7 +36,7 @@ def print_status(message: str) -> None:
 def load(file: str, verbose: bool = False):
   """Try to pickle load the file."""
   if verbose: print_status(f'Read in {file}')
-  assert os.path.isfile(file)
+  assert os.path.isfile(file), f'{file} does not exists'
   if file.endswith('.npy'):
     return np.load(file)
   else:
@@ -53,22 +54,6 @@ def file_exists(files: typing.Union[str, list[str]], *, verbose: bool = False
       return True
       
   return False
-        
-def recursive_file_lookup(filename):
-  result = dict()
-  for dirpath, dirnames, files in os.walk('./data'):
-    if filename in files:
-      result[dirpath.split('/')[2]] = (
-        joblib.load(os.path.join(dirpath, filename)))
-  return dict(sorted(result.items()))
-  
-def recursive_delete(filename) -> None:
-  """Delete all files in current working directory that are named as the
-  filename argument.
-  """
-  for dirpath, dirnames, files in os.walk('.'):
-    if filename in files:
-      os.remove(os.path.join(dirpath, filename))
       
 def get_labels_from_notebook_names(filepath) -> dict[str, str]:
   """Recursive lookup of jupyter notebooks. Use the names to get the labels for 
@@ -77,7 +62,7 @@ def get_labels_from_notebook_names(filepath) -> dict[str, str]:
   """
   labels = {
     file.split()[0]: file.split()[1].split('.')[0] 
-    for file in os.listdir('.')
+    for file in os.listdir(filepath)
     if file.endswith('.ipynb') and re.match(r'[0-9]{2}', file)
   }
   return dict(sorted(labels.items()))                
@@ -108,3 +93,44 @@ def download(url: str, dst: str, verbose: bool = False):
         f.write(chunk)
         pbar.update(1024)
   pbar.close()
+
+def recursive_file_loading(filename: str, path: str = 'data/') -> dict:
+  result = dict()
+  for entry in os.listdir(path):
+    file_path = os.path.join('data', entry, filename)
+    if os.path.isfile(file_path):
+      if filename.endswith('.pkl'):
+        result[int(entry)] = joblib.load(file_path)
+      elif filename.endswith('.npy'):
+        result[int(entry)] = np.load(file_path)
+      else:
+        with open(file_path, 'r') as file:
+          if filename.endswith('.json'):
+            result[int(entry)] = json.load(file)
+          else:
+            file_content = file.read()
+            if filename.endswith('.int'): 
+              result[int(entry)] = int(file_content)
+            elif filename.endswith('.float'):
+              result[int(entry)] = float(file_content)
+            else:
+              result[int(entry)] = file_content
+  return result
+
+def get_categories():
+  result = {
+    5: 'Coauthorship',
+    7: 'Coauthorship',
+    28: 'Hyperlink',
+    29: 'Hyperlink',
+    30: 'Communication',
+    
+  }
+  for entry in os.listdir('data'):
+    meta_file = os.path.join('data', entry, 'meta')
+    if os.path.isfile(meta_file):
+      with open(meta_file) as file:
+        for line in file:
+          if line.startswith('category'):
+            result[int(entry)] = line.split(':')[1].strip()
+  return result

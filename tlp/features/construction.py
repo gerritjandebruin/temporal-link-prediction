@@ -4,7 +4,9 @@ from .na import na
 from .sp import sp
 from .strategies import (AGGREGATION_STRATEGIES, NODEPAIR_STRATEGIES,
                          TIME_STRATEGIES, Strategies)
-from ..helpers import print_status
+from ..helpers import print_status, file_exists
+
+import os
 
 def construction(
   path: str, 
@@ -31,7 +33,15 @@ def construction(
   - instances_sampled.npy, which should be a np.ndarray with shape (n,2). The 
       features are only calculated for each instance in this array.
   """
-  print_status('Collect all features.')
+  if verbose: print_status('Collect all features.')
+  
+  # First check if we can begin.
+  if not file_exists(os.path.join(path, 'edgelist_mature.pkl'), 
+                     verbose=verbose): 
+    return
+  if not file_exists(os.path.join(path, 'instances_sampled.npy'),
+                     verbose=verbose):
+    return
   
   # Feature 1
   aa_time_agnostic(path, verbose=verbose)

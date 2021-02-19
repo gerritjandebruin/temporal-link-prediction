@@ -5,9 +5,11 @@ import tempfile
 import joblib
 import networkx as nx
 
-def diameter(path: str) -> None:
+from ..helpers import recursive_file_loading
+
+def calculate_diameter(path: str) -> None:
   """Determine the diameter of the given graph. Result is stored at 
-  path/diameter.txt"""
+  path/diameter.int"""
   edgelist_path = os.path.join(path, 'edgelist.pkl')
   edgelist = joblib.load(edgelist_path)
   graph = nx.from_pandas_edgelist(edgelist)
@@ -25,6 +27,9 @@ def diameter(path: str) -> None:
       stdout=subprocess.PIPE
     )
 
-  filepath = os.path.join(path, 'diameter.txt')
+  filepath = os.path.join(path, 'diameter.int')
   with open(filepath, 'w') as file:
     file.write(str(int(cp.stdout.split()[0])))
+
+def get_diameter():
+  return recursive_file_loading('diameter.int')

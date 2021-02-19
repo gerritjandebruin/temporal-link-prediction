@@ -37,10 +37,11 @@ def aa_time_aware(
   """
   if verbose: print_status('Start aa_time_agnostic(...)')
   
-  file = os.path.join(path, 'aa_time_aware.pkl')
+  feature_path = os.path.join(path, 'features')
+  file = os.path.join(feature_path, 'aa_time_aware.pkl')
   if file_exists(file, verbose=verbose): return
   
-  os.makedirs(path, exist_ok=True)
+  os.makedirs(feature_path, exist_ok=True)
 
   # Read in
   edgelist, instances = get_edgelist_and_instances(path, verbose=verbose)
@@ -85,5 +86,5 @@ def aa_time_aware(
       result[experiment] = np.array(scores)
   
   # Store
-  print_status('Store result')
+  if verbose: print_status('Store result')
   joblib.dump(result, file)

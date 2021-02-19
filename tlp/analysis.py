@@ -17,8 +17,9 @@ import sklearn.metrics
 import seaborn as sns
 from tqdm.auto import tqdm
 
-from .pipeline.dataPreparation import SPLIT_FRACTION
-from .features import TIME_STRATEGIES, Strategy, Experiment
+from .processing.dataPreparation import SPLIT_FRACTION
+from .features import TIME_STRATEGIES, Experiment
+from .features.strategies import Strategy
 
 
 def plot_datetime(

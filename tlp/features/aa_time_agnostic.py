@@ -22,10 +22,11 @@ def aa_time_agnostic(path:str, *, verbose: bool = False) -> None:
   """
   if verbose: print_status('Start aa_time_agnostic(...)')
   
-  file = os.path.join(path, 'aa_time_agnostic.pkl')
+  feature_path = os.path.join(path, 'features')
+  file = os.path.join(feature_path, 'aa_time_agnostic.pkl')
   if file_exists(file, verbose=verbose): return
   
-  os.makedirs(path, exist_ok=True)
+  os.makedirs(feature_path, exist_ok=True)
 
   # Read in
   edgelist, instances = get_edgelist_and_instances(
