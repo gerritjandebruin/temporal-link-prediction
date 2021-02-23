@@ -1,4 +1,5 @@
 import os
+import typing
 
 import joblib
 import numpy as np
@@ -9,13 +10,17 @@ import sklearn.metrics
 import sklearn.pipeline
 import sklearn.preprocessing
 
-from .helpers import recursive_file_loading
+from tlp.helpers import recursive_file_loading
 
-def calculate_auc_from_logistic_regression(index: int) -> None:
+def calculate_auc_from_logistic_regression(
+  index: int, 
+  filename: str = 'auc_all_features.float',
+  features: typing.Optional[list[str]] = None,
+  ) -> None:
   X = dict()
   
   data_dir = os.path.join('data', f'{index:02}')
-  result_file = os.path.join(data_dir, 'scores', 'auc_all_features.float')
+  result_file = os.path.join(data_dir, 'scores', filename)
 
   # If result is already calculated, quit.
   if os.path.isfile(result_file): return
@@ -25,7 +30,8 @@ def calculate_auc_from_logistic_regression(index: int) -> None:
 
   # Get all calculated features.
   for file in os.scandir(os.path.join(data_dir, 'features')):
-    X.update(joblib.load(file.path))
+    if features is None or file.name in features:
+      X.update(joblib.load(file.path))
   X = pd.DataFrame(X)
 
   # Get targets
@@ -46,5 +52,5 @@ def calculate_auc_from_logistic_regression(index: int) -> None:
   with open(result_file, 'w') as file:
     file.write(f'{auc:.2}')  
 
-def read_auc_from_logistic_regression():
-  return recursive_file_loading('scores/auc_all_features.float')
+def read_auc_from_logistic_regression(filename='auc_all_features.float'):
+  return recursive_file_loading(f'scores/{filename}')
