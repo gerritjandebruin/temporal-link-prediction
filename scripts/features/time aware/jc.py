@@ -66,7 +66,7 @@ def main():
     dict(index=index, time_str=time_str, time_func=time_func, agg_str=agg_str, agg_func=agg_func)
     for index in hypergraph
     for time_str, time_func in time_strategies.items()
-    for agg_str, agg_func in aggregation_strategies.items()
+    for agg_str, agg_func in aggregation_strategies.items() if agg_str not in ['m2', 'm3']
   ] + [
     dict(index=index, time_str=time_str, time_func=time_func)
     for index in simplegraph
@@ -76,7 +76,7 @@ def main():
   tlp.ProgressParallel(n_jobs=min(50, total), total=total)(
     joblib.delayed(jc)(**arg) 
     for arg in args
-    if arg['index'] != 15
+    if arg['index'] not in [15, 17, 26, 27]
   )
 
 if __name__ == '__main__':

@@ -51,7 +51,7 @@ AGGREGATION_STRATEGIES = {
   'm1': np.mean, 
   'm2': np.var,
   'm3': scipy.stats.skew,
-  'm3': scipy.stats.kurtosis
+  'm4': scipy.stats.kurtosis
 }
 
 def diff(x: tuple[Real, Real]) -> Real: return x[1] - x[0]
