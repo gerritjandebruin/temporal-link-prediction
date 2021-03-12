@@ -18,36 +18,36 @@ import tlp
 
 def get_networks(dropna=True):
   networks = {
-    1 : {'label': 'DBLP' , 'old_category': 'Coauthorship' },
-    2 : {'label': 'HepPh', 'old_category': 'Cocitation'   },
-    3 : {'label': 'Enron', 'old_category': 'Communication'},
-    4 : {'label': 'FB-w' , 'old_category': 'Social'       },
-    5 : {'label': 'Condm', 'old_category': 'Coauthorship' },
-    6 : {'label': 'HepTh', 'old_category': 'Cocitation'   },
-    7 : {'label': 'AMin' , 'old_category': 'Coauthorship' },
-    8 : {'label': 'FB-l' , 'old_category': 'Social'       },
-    9 : {'label': 'D-rep', 'old_category': 'Communication'},
-    10: {'label': 'D-f'  , 'old_category': 'Social'       },
-    11: {'label': 'D-v'  , 'old_category': 'Rating'       },
-    12: {'label': 'Rado' , 'old_category': 'Communication'},
-    13: {'label': 'UC'   , 'old_category': 'Interaction'  },
-    14: {'label': 'SX-MO', 'old_category': 'OnlineContact'},
-    15: {                  'old_category': 'Social'       },
-    16: {'label': 'trust', 'old_category': 'Social'       },
-    17: {                  'old_category': 'Social'       },
-    18: {'label': 'bitA' , 'old_category': 'Social'       },
-    19: {'label': 'Dem'  , 'old_category': 'Social'       },
-    20: {'label': 'bitOT', 'old_category': 'Coauthorship' },
-    21: {'label': 'chess', 'old_category': 'Interaction'  },
-    22: {'label': 'SX-AU', 'old_category': 'OnlineContact'},
-    23: {'label': 'SX-SU', 'old_category': 'OnlineContact'},
-    24: {'label': 'loans', 'old_category': 'Interaction'  },
-    25: {'label': 'Wiki' , 'old_category': 'OnlineContact'},
-    26: {                  'old_category': 'Communication'},
-    27: {                  'old_category': 'Hyperlink'    },
-    28: {'label': 'Rbody', 'old_category': 'Hyperlink'    },
-    29: {'label': 'Rtit' , 'old_category': 'Hyperlink'    },
-    30: {'label': 'EU'   , 'old_category': 'Communication'},
+    1 : {'label': 'DBLP' , 'old_category': 'Coauthorship' , 'source': 'Ley2002'},
+    2 : {'label': 'HepPh', 'old_category': 'Cocitation'   , 'source': 'Leskovec2007'},
+    3 : {'label': 'Enron', 'old_category': 'Communication', 'source': 'Klimt2004'},
+    4 : {'label': 'FB-w' , 'old_category': 'Social'       , 'source': 'Viswanath2009'},
+    5 : {'label': 'Condm', 'old_category': 'Coauthorship' , 'source': 'Lichtenwalter2010'},
+    6 : {'label': 'HepTh', 'old_category': 'Cocitation'   , 'source': 'Leskovec2007'},
+    7 : {'label': 'AMin' , 'old_category': 'Coauthorship' , 'source': 'Zhuang2013'},
+    8 : {'label': 'FB-l' , 'old_category': 'Social'       , 'source': 'Viswanath2009'},
+    9 : {'label': 'D-rep', 'old_category': 'Communication', 'source': 'DeChoudhury2009'},
+    10: {'label': 'D-f'  , 'old_category': 'Social'       , 'source': 'Hogg2010'},
+    11: {'label': 'D-v'  , 'old_category': 'Rating'       , 'source': 'Hogg2010'},
+    12: {'label': 'Rado' , 'old_category': 'Communication', 'source': 'Michalski2011'},
+    13: {'label': 'UC'   , 'old_category': 'Interaction'  , 'source': 'Opsahl2013'},
+    14: {'label': 'SX-MO', 'old_category': 'OnlineContact', 'source': 'Paranjape2017'},
+    15: {                  'old_category': 'Social'       , 'source': ''},
+    16: {'label': 'trust', 'old_category': 'Social'       , 'source': 'Richardson2003'},
+    17: {                  'old_category': 'Social'       , 'source': ''},
+    18: {'label': 'bitA' , 'old_category': 'Social'       , 'source': 'Kumar2017'},
+    19: {'label': 'Dem'  , 'old_category': 'Social'       , 'source': 'Wikileaks'},
+    20: {'label': 'bitOT', 'old_category': 'Coauthorship' , 'source': 'Kumar2017'},
+    21: {'label': 'chess', 'old_category': 'Interaction'  , 'source': 'konect'},
+    22: {'label': 'SX-AU', 'old_category': 'OnlineContact', 'source': 'Paranjape2017'},
+    23: {'label': 'SX-SU', 'old_category': 'OnlineContact', 'source': 'Paranjape2017'},
+    24: {'label': 'loans', 'old_category': 'Interaction'  , 'source': 'Redmond2013'},
+    25: {'label': 'Wiki' , 'old_category': 'OnlineContact', 'source': 'Brandes2009'},
+    26: {                  'old_category': 'Communication', 'source': 'Sun2016'},
+    27: {                  'old_category': 'Hyperlink'    , 'source': 'Mislove2009'},
+    28: {'label': 'Rbody', 'old_category': 'Hyperlink'    , 'source': 'Kumar2018'},
+    29: {'label': 'Rtit' , 'old_category': 'Hyperlink'    , 'source': 'Kumar2018'},
+    30: {'label': 'EU'   , 'old_category': 'Communication', 'source': 'Yin2017'},
   }
 
   for network_index, network_info in networks.items():
@@ -118,5 +118,5 @@ def get_diameter(network_indices=network_indices):
   for network_index in tqdm(network_indices):
     with open(f'data/{network_index:02}/diameter.int') as file:
       diameters[network_index] = int(file.read())
-  diameters = pd.Series(diameters, name='diameter').astype(int)
+#   diameters = pd.Series(diameters, name='diameter').astype(int)
   return diameters
