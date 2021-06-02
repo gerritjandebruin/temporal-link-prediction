@@ -1,6 +1,7 @@
 # Temporary dirs
 old-data/
 data/*
+temp/*
 # Except these ones, as they were used in earlier work.
 !data/05
 data/05/*
