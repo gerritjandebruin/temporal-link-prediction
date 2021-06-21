@@ -200,6 +200,38 @@ def reddit(url: str, temp_path: str) -> pd.DataFrame:
 
   return edgelist
 
+def add_phase(edgelist, split_fraction=2/3, 
+              t_min=None, t_split=None, t_max=None):
+  assert 'phase' not in edgelist.columns
+  # Determine split times
+  if t_min is None:
+    t_min = edgelist['datetime'].min() #type: ignore
+  else:
+    edgelist = edgelist[edgelist['datetime'] > t_min].copy()
+  if t_split is None:
+    assert split_fraction is not None, (
+        "Either split_fraction or t_split should be provided.")
+    t_split = edgelist['datetime'].quantile(split_fraction) #type: ignore
+  if t_max is None:
+    t_max = edgelist['datetime'].max() #type: ignore
+    
+  # Checks
+  assert isinstance(t_min, pd.Timestamp)
+  assert isinstance(t_split, pd.Timestamp)
+  assert isinstance(t_max, pd.Timestamp)
+  
+  # Assign phase column
+  edgelist.loc[lambda x: x['datetime'].between(t_min, t_split), 'phase'] = ( #type: ignore
+    'mature')
+  edgelist.loc[lambda x: x['datetime'].between(t_split, t_max), 'phase'] = ( #type: ignore
+    'probe')
+  
+  # Checks
+  assert 0 < edgelist['phase'].notna().mean() <= 1 #type: ignore
+  
+  return edgelist
+  
+
 @app.command()
 def single(index_network: int, 
            edgelist_path: str, 
@@ -282,31 +314,7 @@ def single(index_network: int,
   else:
     raise Exception(f'Invalid {index_network=}')
   
-  # Determine split times
-  if t_min is None:
-    t_min = edgelist['datetime'].min() #type: ignore
-  else:
-    edgelist = edgelist[edgelist['datetime'] > t_min].copy()
-  if t_split is None:
-    assert split_fraction is not None, (
-        "Either split_fraction or t_split should be provided.")
-    t_split = edgelist['datetime'].quantile(split_fraction) #type: ignore
-  if t_max is None:
-    t_max = edgelist['datetime'].max() #type: ignore
-    
-  # Checks
-  assert isinstance(t_min, pd.Timestamp)
-  assert isinstance(t_split, pd.Timestamp)
-  assert isinstance(t_max, pd.Timestamp)
-  
-  # Assign phase column
-  edgelist.loc[lambda x: x['datetime'].between(t_min, t_split), 'phase'] = ( #type: ignore
-    'mature')
-  edgelist.loc[lambda x: x['datetime'].between(t_split, t_max), 'phase'] = ( #type: ignore
-    'probe')
-  
-  # Checks
-  assert 0 < edgelist['phase'].notna().mean() <= 1 #type: ignore
+  edgelist = add_phase(edgelist, split_fraction, t_min, t_split, t_max)
   
   edgelist.to_pickle(edgelist_path)
     
