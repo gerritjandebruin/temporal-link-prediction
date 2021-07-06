@@ -1,30 +1,30 @@
-{"label":"DBLP","category":"Social","source":"Ley2002"}
-{"label":"HepPh","category":"Interaction","source":"Leskovec2007"}
-{"label":"Enron","category":"Social","source":"Klimt2004"}
-{"label":"FB-w","category":"Social","source":"Viswanath2009"}
-{"label":"Condm","category":"Social","source":"Lichtenwalter2010"}
-{"label":"HepTh","category":"Information","source":"Leskovec2007"}
-{"label":"AMin","category":"Social","source":"Zhuang2013"}
-{"label":"FB-l","category":"Social","source":"Viswanath2009"}
-{"label":"D-rep","category":"Social","source":"DeChoudhury2009"}
-{"label":"D-f","category":"Social","source":"Hogg2010"}
-{"label":"D-v","category":"Information","source":"Hogg2010"}
-{"label":"Rado","category":"Social","source":"Michalski2011"}
-{"label":"UC","category":"Information","source":"Opsahl2013"}
-{"label":"SX-MO","category":"Social","source":"Paranjape2017"}
-{"label":"Flick","category":"Social","source":"Mislove2009"}
-{"label":"trust","category":"Social","source":"Richardson2003"}
-{"label":"YT","category":"Social","source":"Mislove2009"}
-{"label":"bitA","category":"Social","source":"Kumar2017"}
-{"label":"Dem","category":"Social","source":"Wikileaks"}
-{"label":"bitOT","category":"Social","source":"Kumar2017"}
-{"label":"chess","category":"Information","source":"konect"}
-{"label":"SX-AU","category":"Social","source":"Paranjape2017"}
-{"label":"SX-SU","category":"Social","source":"Paranjape2017"}
-{"label":"loans","category":"Information","source":"Redmond2013"}
-{"label":"WikiC","category":"Social","source":"Brandes2009"}
-{"label":"WikiT","category":"Social","source":"Sun2016"}
-{"label":"WikiG","category":"Technological","source":"Mislove2009"}
-{"label":"Rbody","category":"Technological","source":"Kumar2018"}
-{"label":"Rtit","category":"Technological","source":"Kumar2018"}
-{"label":"EU","category":"Social","source":"Yin2017"}
+{"index": 1, "label":"DBLP","category":"Social","source":"Ley2002"}
+{"index": 2, "label":"HepPh","category":"Information","source":"Leskovec2007"}
+{"index": 3, "label":"Enron","category":"Social","source":"Klimt2004"}
+{"index": 4, "label":"FB-w","category":"Social","source":"Viswanath2009"}
+{"index": 5, "label":"Condm","category":"Social","source":"Lichtenwalter2010"}
+{"index": 6, "label":"HepTh","category":"Information","source":"Leskovec2007"}
+{"index": 7, "label":"AMin","category":"Social","source":"Zhuang2013"}
+{"index": 8, "label":"FB-l","category":"Social","source":"Viswanath2009"}
+{"index": 9, "label":"D-rep","category":"Social","source":"DeChoudhury2009"}
+{"index": 10, "label":"D-f","category":"Social","source":"Hogg2010"}
+{"index": 11, "label":"D-v","category":"Information","source":"Hogg2010"}
+{"index": 12, "label":"Rado","category":"Social","source":"Michalski2011"}
+{"index": 13, "label":"UC","category":"Information","source":"Opsahl2013"}
+{"index": 14, "label":"SX-MO","category":"Social","source":"Paranjape2017"}
+{"index": 15, "label":"Flick","category":"Social","source":"Mislove2009"}
+{"index": 16, "label":"EP","category":"Social","source":"Richardson2003"}
+{"index": 17, "label":"YT","category":"Social","source":"Mislove2009"}
+{"index": 18, "label":"bitA","category":"Social","source":"Kumar2017"}
+{"index": 19, "label":"Dem","category":"Social","source":"Wikileaks"}
+{"index": 20, "label":"bitOT","category":"Social","source":"Kumar2017"}
+{"index": 21, "label":"chess","category":"Information","source":"konect"}
+{"index": 22, "label":"SX-AU","category":"Social","source":"Paranjape2017"}
+{"index": 23, "label":"SX-SU","category":"Social","source":"Paranjape2017"}
+{"index": 24, "label":"loans","category":"Information","source":"Redmond2013"}
+{"index": 25, "label":"Wiki","category":"Social","source":"Brandes2009"}
+{"index": 26, "label":"WikiT","category":"Social","source":"Sun2016"}
+{"index": 27, "label":"WikiG","category":"Technological","source":"Mislove2009"}
+{"index": 28, "label":"Rbody","category":"Technological","source":"Kumar2018"}
+{"index": 29, "label":"Rtit","category":"Technological","source":"Kumar2018"}
+{"index": 30, "label":"EU","category":"Social","source":"Yin2017"}

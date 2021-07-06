@@ -24,15 +24,14 @@ def predict(directory: str,
     if feature_set == 'I':
         check = lambda x: x in ['aa.npy', 'cn.npy', 'jc.npy', 'pa.npy', 'sp.npy']
     elif feature_set == 'II-A':
-        check = lambda x: not x.startswith('na') and not 'm5' in x
+        check = lambda x: not x.startswith('na')
     elif feature_set == 'II-B':
         check = lambda x: (
-            x in ['aa.npy', 'cn.npy', 'jc.npy', 'pa.npy', 'sp.npy'] or
-            ('_q100' in x) and not x.startswith('na') and not 'm5' in x
+            (x in ['aa.npy', 'cn.npy', 'jc.npy', 'pa.npy', 'sp.npy'] or ('_q100' in x))
+            and not x.startswith('na')
         )
     elif feature_set == 'III':
         check = lambda x: (
-            x in ['aa.npy', 'cn.npy', 'jc.npy', 'pa.npy', 'sp.npy'] or 
             x.startswith('na') and not 'm5' in x
         )
     else:
@@ -85,18 +84,14 @@ def predict(directory: str,
 @app.command()
 def single(network: int, 
            nswap_perc: int, 
-           method: str = None,
            clf: str = 'LogisticRegression',
            feature_set: str = 'II-A',
            random_state: int = 42,
            n_jobs: int = -1):
-    assert nswap_perc != 0 or method is None, f'got {nswap_perc=} and {method=}'
-    if nswap_perc == 0:
-        directory = f'data/{network:02}/{nswap_perc:+04.0f}'
-    else:
-        directory = f'data/{network:02}/{nswap_perc:+04.0f}{method}'
+    directory = f'data/{network:02}/{nswap_perc:+04.0f}'
     os.makedirs(directory, exist_ok=True)
-    filepath_out = os.path.join(directory, 'properties', 
+    filepath_out = os.path.join(directory, 
+                                'properties', 
                                 f'{feature_set}_{clf}.float')
     if os.path.isfile(filepath_out):
         return
@@ -108,47 +103,35 @@ def single(network: int,
   
 @app.command()
 def all(network: int = None,
-        method: str = None,
+        n_swap_perc: int = None,
         clf: str = 'LogisticRegression',
         n_jobs: int = -1, 
+        feature_set: str = 'II-A',
         shuffle: bool = True, 
-        seed: int = 42,
-        include_nswap: bool = True):
+        seed: int = 42):
     if network is None:
         networks = [network for network in np.arange(1, 31) 
                     if network not in [15, 17, 26, 27]]
     else:
         networks = [network]
-    if include_nswap:
+    if n_swap_perc is None:
         nswap_percs = np.arange(-100, 101, 20)
     else:
-        nswap_percs = [0]
-    if method is None:
-        iterations = [(network, nswap_perc, None if nswap_perc == 0 else method)
-                      for network in networks
-                      for nswap_perc in nswap_percs
-                      for method in ['a', 'b']
-                      if not nswap_perc == 0 and method == 'b']
-    else:
-        assert method in ['a', 'b']
-        iterations = [(network, nswap_perc, None if nswap_perc == 0 else method)
-                      for network in networks
-                      for nswap_perc in nswap_percs]
+        nswap_percs = [n_swap_perc]
+    iterations = [(network, nswap_perc)
+                  for network in networks
+                  for nswap_perc in nswap_percs]
     if shuffle:
         random.seed(seed)
         random.shuffle(iterations)
     if n_jobs == -1 or n_jobs > 1:
         ProgressParallel(n_jobs=n_jobs, total=len(iterations))(
-            delayed(single)(
-                network=network, 
-                method=method,
-                clf=clf,
-                nswap_perc=nswap_perc) 
-            for network, nswap_perc, method in iterations
+            delayed(single)(network, nswap_perc, clf, feature_set) 
+            for network, nswap_perc in iterations
         )          
     else:
-        for network, nswap_perc, method in tqdm(iterations):
-            single(network, nswap_perc, method)
+        for network, nswap_perc in tqdm(iterations):
+            single(network, nswap_perc, clf, feature_set)
         
 if __name__ == '__main__':
     app()

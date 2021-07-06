@@ -1,5 +1,4 @@
 import collections
-from enum import Enum
 import itertools
 import os
 
@@ -42,7 +41,7 @@ def exp(x: pd.Series, lower_bound=.2):
 
 
 def sqrt(x: pd.Series, lower_bound=.2):
-    return _rescale(np.sqrt(_rescale(x.astype(int))), lower_bound=lower_bound)
+    return _rescale(np.sqrt(_rescale(x.astype(int))), lower_bound=lower_bound) #type: ignore
 
 
 TIME_STRATEGIES = {'lin': lin, 'exp': exp, 'sqrt': sqrt}
@@ -60,8 +59,12 @@ AGGREGATION_STRATEGIES = {
     'm4': scipy.stats.kurtosis
 }
 
-NODEPAIR_STRATEGIES = {'sum': sum, 'diff': lambda x: x[1]-x[0],
-                       'max': max, 'min': min}
+NODEPAIR_STRATEGIES = {
+    'sum': sum, 
+    'diff': lambda x: x[1]-x[0],
+    'max': max, 
+    'min': min
+}
 # endregion
 
 # region FEATURES
@@ -210,7 +213,6 @@ def pa_time_aware(edgelist_mature, instances, time_strategy,
 def all(network: int = None, 
         network_from: int = 1,
         network_to: int = 31,
-        method: str = None, 
         n_jobs: int = -1, 
         include_na: bool = True):
     assert network is None or (network_from == 1 and network_to == 31) 
@@ -226,7 +228,7 @@ def all(network: int = None,
         # logger.debug('Get edgelist')
         edgelist_mature = (
             pd.read_pickle(os.path.join(path, 'edgelist.pkl'))
-            .loc[lambda x: (x['phase'] == 'mature') & (x['source'] != x['target'])]
+            .query("(phase == 'mature') & (source != target)")
         )
         # logger.debug('Get instances')
         instances = np.array(
@@ -245,22 +247,11 @@ def all(network: int = None,
                     if not network in [15, 17, 26, 27]]
     else:
         networks = [network]
-    if method is None:
-        paths = [
-            f'data/{network:02}/{nswap_perc:+04.0f}{method if method != 0 else ""}/'
-            for nswap_perc in np.arange(-100, 101, 20)
-            for method in ['a', 'b']
-            for network in networks
-            if not nswap_perc == 0 and method == 'b'
-        ]
-    else:
-        assert method in ['a', 'b']
-        paths = [
-            f'data/{network:02}/{nswap_perc:+04.0f}{method}/'
-            for network in networks
-            for nswap_perc in np.arange(-100, 101, 20)
-            if not nswap_perc == 0 and method == 'b'
-        ]
+    paths = [
+        f'data/{network:02}/{nswap_perc:+04.0f}/'
+        for nswap_perc in np.arange(-100, 101, 20)
+        for network in networks
+    ]
 
     # aa
     ProgressParallel(n_jobs=len(paths), total=len(paths), desc='aa')(
@@ -359,8 +350,12 @@ def all(network: int = None,
 
     # pa_time_aware
     total = len(paths)*len(TIME_STRATEGIES)*len(AGGREGATION_STRATEGIES)
-    ProgressParallel(n_jobs=n_jobs, total=total, desc='pa time-aware', 
-                     pre_dispatch='1*n_jobs')(
+    ProgressParallel(
+        n_jobs=n_jobs, 
+        total=total, 
+        desc='pa time-aware', 
+        # pre_dispatch='1*n_jobs'
+    )(
         delayed(calculate_feature)(
             feature_func=pa_time_aware,
             path=path,
@@ -397,7 +392,7 @@ def single(path: str, n_jobs: int = -1, verbose=True):
     os.makedirs(features_dir, exist_ok=True)
     edgelist_mature = (
         pd.read_pickle(edgelist_file)
-        .loc[lambda x: (x['phase'] == 'mature') & (x['source'] != x['target'])]
+        .query("(phase == 'mature') & (source != target)")
     )
     instances = np.array([i for i in pd.read_pickle(samples_file).index])
 
@@ -409,8 +404,12 @@ def single(path: str, n_jobs: int = -1, verbose=True):
                      desc='simple features',
                      leave=True,
                      n_jobs=n_jobs if n_jobs < total else total)(
-        delayed(calculate_feature)(func, os.path.join(features_dir, func_str + '.pkl'),
-                                   edgelist_mature, instances)
+        delayed(calculate_feature)(
+            function=func, 
+            out_filepath=os.path.join(features_dir, func_str + '.pkl'),
+            edgelist_mature=edgelist_mature, 
+            instances=instances
+        )
         for func_str, func in simple_funcs
     )
 
@@ -425,8 +424,10 @@ def single(path: str, n_jobs: int = -1, verbose=True):
                      n_jobs=total if total < n_jobs else n_jobs)(
         delayed(calculate_feature)(
             function=na,
-            out_filepath=os.path.join(features_dir,
-                                      f'na_{time_str}_{agg_str}_{nodepair_str}.pkl'),
+            out_filepath=os.path.join(
+                features_dir,
+                f'na_{time_str}_{agg_str}_{nodepair_str}.pkl'
+            ),
             edgelist_mature=edgelist_mature, instances=instances,
             time_strategy=time_func,
             aggregation_strategy=agg_func,
@@ -460,14 +461,8 @@ def single(path: str, n_jobs: int = -1, verbose=True):
         for func_str, func in time_aware_funcs
     )
 
-class methods(str, Enum):
-    a = "a"
-    b = "b"
-
-
 @app.command()
-def check(method: methods):
-    method = method.value
+def check():
     iterator = list(
         itertools.product(
             [network for network in np.arange(1, 31)
@@ -477,7 +472,7 @@ def check(method: methods):
     )
     result = dict()
     for n, nswap_perc in iterator:
-        dir = f'data/{n:02}/{nswap_perc:+04.0f}{method if method != 0 else ""}/features'
+        dir = f'data/{n:02}/{nswap_perc:+04.0f}/features'
         if os.path.isdir(dir):
             result[(n, nswap_perc)] = len(list(os.scandir(dir)))
     print(result)

@@ -11,9 +11,8 @@ from .logger import logger
 app = typer.Typer()
 
 @app.command()
-def single(network_index: int, nswap_perc: int, method: str = None, 
-           verbose: bool = False):
-  directory = f'data/{network_index:02}/{nswap_perc:+04.0f}{"" if method is None else method}'
+def single(network_index: int, nswap_perc: int, verbose: bool = False):
+  directory = f'data/{network_index:02}/{nswap_perc:+04.0f}'
   filepath_in = os.path.join(directory, 'graph.pkl')
   filepath_out = os.path.join(directory, 'edgelist.pkl')
   if os.path.isfile(filepath_in) and not os.path.isfile(filepath_out):
@@ -31,17 +30,16 @@ def all(n_jobs: int = -1,
         shuffle: bool = True, 
         seed: int = 42,
         verbose: bool = False):
-    iterator = [(network, nswap_perc, None if nswap_perc == 0 else method)
-                for network in np.arange(1, 31) if not network in [15, 17, 26, 27]
-                for nswap_perc in np.arange(-100, 101, 20)
-                for method in ['a', 'b'] 
-                if not (method == 'b' and nswap_perc == 0)]
+    iterator = [(network, nswap_perc)
+                for network in np.arange(1, 31) 
+                if not network in [15, 17, 26, 27]
+                for nswap_perc in np.arange(-100, 101, 20)]
     if shuffle:
         random.seed(seed)
         random.shuffle(iterator)
     ProgressParallel(n_jobs=n_jobs, total=len(iterator))(
-        delayed(single)(network_index, nswap_perc, method, verbose) 
-        for network_index, nswap_perc, method in iterator
+        delayed(single)(network_index, nswap_perc, verbose) 
+        for network_index, nswap_perc in iterator
     )
   
 @app.command()
